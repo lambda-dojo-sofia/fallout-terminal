@@ -32,26 +32,31 @@ startGame = do
 
     game words secret
 
+readIndex :: Int -> Int -> IO (Either String Int)
+readIndex lowerLimit upperLimit = do
+  putStr "YOUR ANSWER >> "
+  maybeIdx <- fmap (readMaybe) getLine :: IO (Maybe Int)
+  case maybeIdx of
+    Nothing -> return $ Left "Invalid number"
+    Just idx -> if isIndexWithinRange lowerLimit upperLimit idx then
+        return $ Right idx
+      else
+        return $ Left ( "Number should be between " ++ (show lowerLimit) ++ " and " ++ (show upperLimit) )
+
+isIndexWithinRange :: Int -> Int -> Int -> Bool
+isIndexWithinRange lowerLimit upperLimit idx = idx >= lowerLimit && idx <= upperLimit
+
 game words secret = do
     printWords words
-    putStr "YOUR ANSWER >> "
-
-    idxStr <- getLine
-    let maybeIdx = readMaybe idxStr :: Maybe Int
-
-    case maybeIdx of
-        Nothing -> game words secret
-        Just idx -> do
-            if idx < 0 || idx >= (length words) then
-                game words secret
-            else do
-                let selection = words !! ((length words) - idx - 1)
-
-                if selection == secret then
-                    won
-                else do
-                    report secret selection
-                    game words secret
+    eitherIdx <- readIndex 0 ((length words) - 1)
+    case eitherIdx of
+      Left errorMessage -> print errorMessage >> game words secret
+      Right idx -> do
+        let selection = words !! (((length words) - idx) - 1)
+        print selection
+        if selection == secret then
+          won
+        else report secret selection >> game words secret
 
 won = do
     putStrLn "Love u"
